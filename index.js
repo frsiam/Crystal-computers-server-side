@@ -12,13 +12,23 @@ app.use(express.json())
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zxp0r.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri)
+
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-client.connect(err => {
-    const collection = client.db("test").collection("devices");
-    // perform actions on the collection object
-    client.close();
-});
+
+async function run() {
+    try {
+        await client.connect();
+        const partsCollection = client.db("crystal_computers").collection("parts");
+        app.get('/parts', async (req, res) => {
+            const query = {};
+            const parts = await partsCollection.find().toArray()
+            res.send(parts);
+        })
+    } finally {
+        //   await client.close();
+    }
+}
+run().catch(console.dir);
 
 
 
