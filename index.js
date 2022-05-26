@@ -3,13 +3,27 @@ const express = require('express')
 const app = express()
 const port = process.env.PORT || 4000
 const cors = require('cors')
+const jwt = require('jsonwebtoken');
 require('dotenv').config()
 
 // middleware 
 app.use(cors())
 app.use(express.json())
 
-
+function verifyToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ meassase: 'Unauthorized Access' })
+    }
+    const myToken = authHeader.split(' ')[1];
+    jwt.verify(myToken, process.env.SECRET_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden Access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zxp0r.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -30,7 +44,13 @@ async function run() {
             const options = { upsert: true };
             const updateDoc = { $set: user };
             const result = await userCollection.updateOne(filter, updateDoc, options);
-            res.send(result);
+            const token = jwt.sign({ email: email }, process.env.SECRET_TOKEN, { expiresIn: '1h' })
+            res.send({ result, token });
+        })
+        // get all user from this api 
+        app.get('/user', async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.send(users);
         })
         // load all parts from database
         app.get('/parts', async (req, res) => {
@@ -58,12 +78,17 @@ async function run() {
             res.send(result);
         })
         // Get all My orders api
-        app.get('/myorder', async (req, res) => {
-            // const decodedEmail = req.decoded.email;
+        app.get('/myorder', verifyToken, async (req, res) => {
+            const decodedEmail = req.decoded.email;
             const email = req.query.email;
-            const query = { email: email };
-            const myOrders = await orderCollection.find(query).toArray();
-            res.send(myOrders);
+            if (decodedEmail === email) {
+                const query = { email: email };
+                const myOrders = await orderCollection.find(query).toArray();
+                res.send(myOrders);
+            }
+            else {
+                return res.status(403).send({ meassase: 'forbidden access' });
+            }
         })
         //post a order from client side or create an order
         app.post('/order', async (req, res) => {
