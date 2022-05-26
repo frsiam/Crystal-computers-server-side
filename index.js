@@ -45,6 +45,14 @@ async function run() {
             const result = await partsCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         })
+        // My orders api
+        app.get('/myorder', async (req, res) => {
+            // const decodedEmail = req.decoded.email;
+            const email = req.query.email;
+            const query = { email: email };
+            const myOrders = await orderCollection.find(query).toArray();
+            res.send(myOrders);
+        })
         //post a order from client side or create an order
         app.post('/order', async (req, res) => {
             const order = req.body;
