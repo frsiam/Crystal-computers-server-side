@@ -45,7 +45,7 @@ async function run() {
             const result = await partsCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         })
-        // My orders api
+        // Get all My orders api
         app.get('/myorder', async (req, res) => {
             // const decodedEmail = req.decoded.email;
             const email = req.query.email;
@@ -57,6 +57,13 @@ async function run() {
         app.post('/order', async (req, res) => {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
+            res.send(result);
+        })
+        //Delete a order from client
+        app.delete('/order/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(query);
             res.send(result);
         })
     } finally {
