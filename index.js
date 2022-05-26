@@ -20,6 +20,18 @@ async function run() {
         await client.connect();
         const partsCollection = client.db("crystal_computers").collection("parts");
         const orderCollection = client.db("crystal_computers").collection("orders");
+        const userCollection = client.db("crystal_computers").collection("users");
+
+        // users information creat a cullection
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = { $set: user };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
         // load all parts from database
         app.get('/parts', async (req, res) => {
             const query = {};

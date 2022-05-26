@@ -6,4 +6,5 @@
 * Here visitor can login or register by email and password or google.
 * Customer can order the product if he logged in.
 * Here is an admin role who manage the product and users.
+* If a normal user wants to place order, canceling an order and finally payment the bill.
 * Here technology is used the React, Node.js, Express.js, React Router dom, useQuery from React Query, Firebase authentication, Heroku for server deploy, Tailwind CSS, Daisy Ui for tailwind component.
