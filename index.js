@@ -36,7 +36,7 @@ async function run() {
         const orderCollection = client.db("crystal_computers").collection("orders");
         const userCollection = client.db("crystal_computers").collection("users");
 
-        // users information creat a cullection
+        // users information creat a collection
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -47,8 +47,26 @@ async function run() {
             const token = jwt.sign({ email: email }, process.env.SECRET_TOKEN, { expiresIn: '1h' })
             res.send({ result, token });
         })
+        // add an admin role on same api wher we post the user information 
+        app.put('/user/admin/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            const requester = req.decoded.email;
+            const filter = { email: requester };
+            const requesterAccount = await userCollection.findOne(filter)
+            if (requesterAccount.role === 'admin') {
+                const filter = { email: email };
+                const updateDoc = {
+                    $set: { role: 'admin' }
+                };
+                const result = await userCollection.updateOne(filter, updateDoc);
+                res.send(result);
+            }
+            else {
+                res.status(403).send({ message: 'Unauthorized access !' })
+            }
+        })
         // get all user from this api 
-        app.get('/user', async (req, res) => {
+        app.get('/user', verifyToken, async (req, res) => {
             const users = await userCollection.find().toArray();
             res.send(users);
         })
