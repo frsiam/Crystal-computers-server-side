@@ -35,6 +35,7 @@ async function run() {
         const partsCollection = client.db("crystal_computers").collection("parts");
         const orderCollection = client.db("crystal_computers").collection("orders");
         const userCollection = client.db("crystal_computers").collection("users");
+        const reviewCollection = client.db("crystal_computers").collection("reviews");
 
         // users information creat a collection
         app.put('/user/:email', async (req, res) => {
@@ -64,6 +65,14 @@ async function run() {
             else {
                 res.status(403).send({ message: 'Unauthorized access !' })
             }
+        })
+        //check the logged in user admin or not
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email }
+            const user = await userCollection.findOne(filter)
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin });
         })
         // get all user from this api 
         app.get('/user', verifyToken, async (req, res) => {
@@ -119,6 +128,12 @@ async function run() {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await orderCollection.deleteOne(query);
+            res.send(result);
+        })
+        // Post a review from client side to database
+        app.post('/review', async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
             res.send(result);
         })
     } finally {
