@@ -48,7 +48,8 @@ async function run() {
             const token = jwt.sign({ email: email }, process.env.SECRET_TOKEN, { expiresIn: '1h' })
             res.send({ result, token });
         })
-        // add an admin role on same api wher we post the user information 
+
+        // add an admin role on same api where we post the user information 
         app.put('/user/admin/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             const requester = req.decoded.email;
@@ -66,6 +67,7 @@ async function run() {
                 res.status(403).send({ message: 'Unauthorized access !' })
             }
         })
+
         //check the logged in user admin or not
         app.get('/admin/:email', async (req, res) => {
             const email = req.params.email;
@@ -74,10 +76,18 @@ async function run() {
             const isAdmin = user.role === 'admin';
             res.send({ admin: isAdmin });
         })
+
         // get all user from this api 
         app.get('/user', verifyToken, async (req, res) => {
             const users = await userCollection.find().toArray();
             res.send(users);
+        })
+
+        // add a product/parts
+        app.post('/addproduct', async (req, res) => {
+            const newProduct = req.body;
+            const result = await partsCollection.insertOne(newProduct);
+            res.send(result);
         })
         // load all parts from database
         app.get('/parts', async (req, res) => {
@@ -85,6 +95,7 @@ async function run() {
             const parts = await partsCollection.find().toArray()
             res.send(parts);
         })
+
         // load single parts from database by id 
         app.get('/part/:id', async (req, res) => {
             const id = req.params.id;
