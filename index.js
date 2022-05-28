@@ -53,8 +53,7 @@ async function run() {
         app.put('/user/admin/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             const requester = req.decoded.email;
-            const filter = { email: requester };
-            const requesterAccount = await userCollection.findOne(filter)
+            const requesterAccount = await userCollection.findOne({ email: requester })
             if (requesterAccount.role === 'admin') {
                 const filter = { email: email };
                 const updateDoc = {
@@ -64,7 +63,7 @@ async function run() {
                 res.send(result);
             }
             else {
-                res.status(403).send({ message: 'Unauthorized access !' })
+                res.status(403).send({ message: 'forbidden access !' })
             }
         })
 
@@ -73,7 +72,7 @@ async function run() {
             const email = req.params.email;
             const filter = { email: email }
             const user = await userCollection.findOne(filter)
-            const isAdmin = user.role === 'admin';
+            const isAdmin = user?.role === 'admin';
             res.send({ admin: isAdmin });
         })
 
@@ -123,6 +122,7 @@ async function run() {
             const result = await partsCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         })
+
         // Get all My orders api
         app.get('/myorder', verifyToken, async (req, res) => {
             const decodedEmail = req.decoded.email;
@@ -136,6 +136,22 @@ async function run() {
                 return res.status(403).send({ meassase: 'forbidden access' });
             }
         })
+
+        // Get all orders for admin api
+        app.get('/orders/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            const requester = req.decoded.email;
+            const filter = { email: requester };
+            const requesterAccount = await userCollection.findOne(filter)
+            if (requesterAccount.role === 'admin') {
+                const orders = await orderCollection.find().toArray();
+                res.send(orders);
+            }
+            else {
+                res.status(403).send({ message: 'Unauthorized access !' })
+            }
+        })
+
         //post a order from client side or create an order
         app.post('/order', async (req, res) => {
             const order = req.body;
