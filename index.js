@@ -103,6 +103,14 @@ async function run() {
             const result = await partsCollection.findOne(query);
             res.send(result);
         })
+
+        // delete single parts from database by id 
+        app.delete('/deleteparts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await partsCollection.deleteOne(query);
+            res.send(result);
+        })
         //update parts quantity
         app.put('/part/:id', async (req, res) => {
             const id = req.params.id;
