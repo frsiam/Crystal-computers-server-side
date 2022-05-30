@@ -11,7 +11,7 @@ app.use(cors())
 app.use(express.json())
 
 function verifyToken(req, res, next) {
-    const authHeader = req.headers.authorization;
+    const authHeader = req?.headers?.authorization;
     if (!authHeader) {
         return res.status(401).send({ meassase: 'Unauthorized Access' })
     }
@@ -37,6 +37,18 @@ async function run() {
         const userCollection = client.db("crystal_computers").collection("users");
         const reviewCollection = client.db("crystal_computers").collection("reviews");
 
+        // verify admin who make other user to admin 
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester })
+            if (requesterAccount.role === 'admin') {
+                next()
+            }
+            else {
+                res.status(403).send('Forbidden access');
+            }
+        }
+
         // users information creat a collection
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
@@ -50,21 +62,14 @@ async function run() {
         })
 
         // add an admin role on same api where we post the user information 
-        app.put('/user/admin/:email', verifyToken, async (req, res) => {
+        app.put('/user/admin/:email', verifyToken, verifyAdmin, async (req, res) => {
             const email = req.params.email;
-            const requester = req.decoded.email;
-            const requesterAccount = await userCollection.findOne({ email: requester })
-            if (requesterAccount.role === 'admin') {
-                const filter = { email: email };
-                const updateDoc = {
-                    $set: { role: 'admin' }
-                };
-                const result = await userCollection.updateOne(filter, updateDoc);
-                res.send(result);
-            }
-            else {
-                res.status(403).send({ message: 'forbidden access !' })
-            }
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: 'admin' }
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
         })
 
         //check the logged in user admin or not
@@ -89,8 +94,7 @@ async function run() {
             res.send(result);
         })
         // load all parts from database
-        app.get('/parts', async (req, res) => {
-            const query = {};
+        app.get('/parts', verifyToken, async (req, res) => {
             const parts = await partsCollection.find().toArray()
             res.send(parts);
         })
@@ -138,18 +142,9 @@ async function run() {
         })
 
         // Get all orders for admin api
-        app.get('/orders/:email', verifyToken, async (req, res) => {
-            const email = req.params.email;
-            const requester = req.decoded.email;
-            const filter = { email: requester };
-            const requesterAccount = await userCollection.findOne(filter)
-            if (requesterAccount.role === 'admin') {
-                const orders = await orderCollection.find().toArray();
-                res.send(orders);
-            }
-            else {
-                res.status(403).send({ message: 'Unauthorized access !' })
-            }
+        app.get('/orders/:email', verifyToken, verifyAdmin, async (req, res) => {
+            const orders = await orderCollection.find().toArray();
+            res.send(orders);
         })
 
         //post a order from client side or create an order
