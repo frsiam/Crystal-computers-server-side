@@ -1,4 +1,6 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+var nodemailer = require('nodemailer');
+var sgTransport = require('nodemailer-sendgrid-transport');
 const express = require('express')
 const app = express()
 const port = process.env.PORT || 4000
@@ -23,6 +25,36 @@ function verifyToken(req, res, next) {
         req.decoded = decoded;
         next();
     })
+}
+
+const emailSenderOptions = {
+    auth: {
+        api_key: process.env.EMAIL_SENDER_KEY
+    }
+}
+const emailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
+function sendOrderEmail(order) {
+    const { email, productName, price, userName, productQuantity } = order;
+    var toEmail = {
+        from: process.env.EMAIL_SENDER,
+        to: email,
+        subject: `Your ${productName} Order`,
+        text: `${productName} order is done and total bill is ${price}`,
+        html: `
+        <div>
+        <p>Hey ! ${userName}, </p>
+        <p>Your Order of ${productName}, quantity is: ${productQuantity} completed successfully !!</p>
+        </div>
+        `
+    };
+    emailClient.sendMail(toEmail, function (err, info) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            console.log('Message sent: ', info);
+        }
+    });
 }
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zxp0r.mongodb.net/?retryWrites=true&w=majority`;
@@ -94,7 +126,7 @@ async function run() {
             res.send(result);
         })
         // load all parts from database
-        app.get('/parts', verifyToken, async (req, res) => {
+        app.get('/parts', async (req, res) => {
             const parts = await partsCollection.find().toArray()
             res.send(parts);
         })
@@ -151,6 +183,7 @@ async function run() {
         app.post('/order', async (req, res) => {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
+            sendOrderEmail(order)
             res.send(result);
         })
         //Delete a order from client
