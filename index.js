@@ -125,6 +125,18 @@ async function run() {
             const result = await partsCollection.insertOne(newProduct);
             res.send(result);
         })
+        // update a product/parts
+        app.put('/updateParts/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedProduct = req.body;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: updatedProduct,
+            };
+            const result = await partsCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
         // load all parts from database
         app.get('/parts', async (req, res) => {
             const parts = await partsCollection.find().toArray()
