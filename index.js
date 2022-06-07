@@ -226,7 +226,7 @@ app.get('/siam', (req, res) => {
     res.send('Asignment 12 is on fire')
 })
 app.get('/', (req, res) => {
-    res.send('Insha allah one day muslimes rolling the whole world')
+    res.send('Insha allah')
 })
 
 app.listen(port, () => {
